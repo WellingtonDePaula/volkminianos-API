@@ -1,0 +1,104 @@
+## ==========================================
+## .gitignore Otimizado para ASP.NET Core (.NET 9.0 API)
+## ==========================================
+
+# --- Pastas de Build e Saída de Código ---
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+bld/
+
+# --- Arquivos de Cache e Configuração do Visual Studio ---
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VisualState.xml
+*.cachefile
+*.VC.db
+*.VC.VC.opendb
+
+# --- Arquivos do VS Code (Ideais para times híbridos) ---
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+.history/
+
+# --- JetBrains Rider / Resharper ---
+.idea/
+*.sln.iml
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# --- .NET Core / .NET 9.0 Específicos ---
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.binlog
+
+# --- SEGURANÇA E CONFIGURAÇÕES SENSÍVEIS (Crucial para APIs) ---
+# Nunca comite arquivos com strings de conexão, senhas ou chaves de API reais
+appsettings.Development.json
+appsettings.Local.json
+*.pem
+*.pfx
+*.key
+secrets.json
+
+# --- Pacotes Nuget ---
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+*.nuget.props
+*.nuget.targets
+
+# --- Docker & Containers (Comum em APIs .NET 9) ---
+.dockerignore
+# Descomente abaixo se não quiser comitar os Dockerfiles gerados pelo VS
+#Dockerfile
+#Docker-compose.override.yml
+
+# --- Cobertura de Testes (Unitários/Integração) ---
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+BenchmarkDotNet.Artifacts/
+TestResult.xml
+nunit-*.xml
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.coveragexml
+_NCrunch_*
+.NCrunch_*
+
+# --- Banco de Dados Local (Entity Framework / LocalDB) ---
+*.mdf
+*.ldf
+*.ndf
+.efbundle/
+
+# --- Arquivos do Sistema Operacional ---
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# --- Ferramentas de Frontend e Node.js (Se sua API usar bundles ou documentação integrada) ---
+node_modules/
+.npm/
+
+mysql_data/
