@@ -13,7 +13,6 @@ public class UsuarioRepository : IUsuarioRepository {
     }
 
     public async Task<IEnumerable<Usuario>> ObterTodosAsync() {
-        // O "!" ignora o aviso de anulável, pois sabemos que o DbSet existe
         return await _context.Usuarios!.AsNoTracking().ToListAsync();
     }
 
@@ -38,7 +37,6 @@ public class UsuarioRepository : IUsuarioRepository {
     }
 
     public async Task<bool> SalvarMudancasAsync() {
-        // Retorna true se algo foi salvo no banco
         return await _context.SaveChangesAsync() > 0;
     }
 }
