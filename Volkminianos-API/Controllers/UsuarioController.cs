@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -30,6 +31,7 @@ namespace VolkminianosAPI.Controllers {
             }
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<UsuarioDto>>> ObterTodosAsync() {
             var usuarios = await _service.ObterTodosAsync();
@@ -39,6 +41,7 @@ namespace VolkminianosAPI.Controllers {
             return Ok(usuarios);
         }
 
+        [Authorize]
         [HttpGet("{id:int:min(1)}")]
         public async Task<ActionResult<UsuarioDto>> ObterPorIdAsync(int id) {
             var usuario = await _service.ObterPorIdAsync(id);
@@ -48,6 +51,7 @@ namespace VolkminianosAPI.Controllers {
             return Ok(usuario);
         }
 
+        [Authorize]
         [HttpGet("por-email")]
         public async Task<ActionResult<UsuarioDto>> ObterPorEmailAsync([FromQuery] string email) {
             if (string.IsNullOrEmpty(email)) {
@@ -61,6 +65,7 @@ namespace VolkminianosAPI.Controllers {
             return Ok(usuario);
         }
 
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<UsuarioDto>> CriarAsync([FromBody] CriarUsuarioDto dto) {
             if (!ModelState.IsValid) {
@@ -75,6 +80,7 @@ namespace VolkminianosAPI.Controllers {
             }
         }
 
+        [Authorize = "Admin"]
         [HttpPut("{id:int:min(1)}")]
         public async Task<IActionResult> AtualizarAsync(int id, [FromBody] AtualizarUsuarioDto dto) {
             if (!ModelState.IsValid) {
@@ -88,6 +94,7 @@ namespace VolkminianosAPI.Controllers {
             return NoContent();
         }
 
+        [Authorize = "Admin"]
         [HttpDelete("{id:int:min(1)}")]
         public async Task<IActionResult> DeletarAsync(int id) {
             var deletado = await _service.DeletarAsync(id);
