@@ -1,6 +1,6 @@
 ﻿using VolkminianosAPI.DTOs.Usuario;
 
-namespace VolkminianosAPI.Services.Interfaces;
+namespace VolkminianosAPI.Services;
 
 public interface IUsuarioService {
     Task<IEnumerable<UsuarioDto>> ObterTodosAsync();

@@ -1,10 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using VolkminianosAPI.DTOs.Usuario;
-using VolkminianosAPI.Services.Interfaces;
+using VolkminianosAPI.Services;
 
 namespace VolkminianosAPI.Controllers {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class UsuarioController : ControllerBase {
         private readonly IUsuarioService service;
 

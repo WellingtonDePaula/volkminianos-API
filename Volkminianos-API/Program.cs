@@ -2,9 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using VolkminianosAPI.Context;
 using VolkminianosAPI.Domain.Interfaces;
-using VolkminianosAPI.Infrastructure.Repositories;
+using VolkminianosAPI.Repositories;
 using VolkminianosAPI.Services;
-using VolkminianosAPI.Services.Interfaces;
 
 namespace VolkminianosAPI {
     public class Program {
@@ -23,7 +22,10 @@ namespace VolkminianosAPI {
                 options.UseMySql(mySqlConnection, ServerVersion.AutoDetect(mySqlConnection));
             });
 
+            // Repositories
             builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+
+            // Services
             builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
             builder.Services.AddControllers(options => {

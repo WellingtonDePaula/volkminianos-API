@@ -1,6 +1,5 @@
 ﻿using VolkminianosAPI.Domain.Interfaces;
 using VolkminianosAPI.DTOs.Usuario;
-using VolkminianosAPI.Services.Interfaces;
 using Usuario = VolkminianosAPI.Models.Usuario;
 
 namespace VolkminianosAPI.Services;
