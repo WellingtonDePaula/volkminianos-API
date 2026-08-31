@@ -1,5 +1,8 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using System.Text;
 using VolkminianosAPI.Context;
 using VolkminianosAPI.Domain.Interfaces;
 using VolkminianosAPI.Repositories;
@@ -20,6 +23,25 @@ namespace VolkminianosAPI {
             string mySqlConnection = builder.Configuration.GetConnectionString("DefaultConnection");
             builder.Services.AddDbContext<AppDbContext>(options => {
                 options.UseMySql(mySqlConnection, ServerVersion.AutoDetect(mySqlConnection));
+            });
+
+            // JWT
+            var jwtChave = builder.Configuration["Jwt:Chave"]!;
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options => {
+                options.TokenValidationParameters = new TokenValidationParameters {
+                    ValidateIssuer = true,
+                    ValidIssuer = builder.Configuration["Jwt:Emissor"],
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtChave))
+                };
             });
 
             // Repositories
@@ -44,7 +66,6 @@ namespace VolkminianosAPI {
             app.UseHttpsRedirection();
 
             app.UseAuthentication();
-
             app.UseAuthorization();
 
             app.MapControllers();
