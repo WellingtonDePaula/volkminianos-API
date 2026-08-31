@@ -80,7 +80,7 @@ namespace VolkminianosAPI.Controllers {
             }
         }
 
-        [Authorize = "Admin"]
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id:int:min(1)}")]
         public async Task<IActionResult> AtualizarAsync(int id, [FromBody] AtualizarUsuarioDto dto) {
             if (!ModelState.IsValid) {
@@ -94,7 +94,7 @@ namespace VolkminianosAPI.Controllers {
             return NoContent();
         }
 
-        [Authorize = "Admin"]
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id:int:min(1)}")]
         public async Task<IActionResult> DeletarAsync(int id) {
             var deletado = await _service.DeletarAsync(id);
