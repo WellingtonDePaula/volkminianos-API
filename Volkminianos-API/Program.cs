@@ -17,7 +17,36 @@ namespace VolkminianosAPI {
 
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-            builder.Services.AddOpenApi();
+            builder.Services.AddOpenApi(options => {
+                options.AddDocumentTransformer((document, context, cancellationToken) => {
+                    document.Components ??= new();
+
+                    document.Components.SecuritySchemes.Add("Bearer", new() {
+                        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                        Scheme = "bearer",
+                        BearerFormat = "JWT"
+                    });
+
+                    document.SecurityRequirements = new[] {
+                        new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                        {
+                            {
+                                new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                                {
+                                    Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                                    {
+                                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                                        Id = "Bearer"
+                                    }
+                                },
+                                Array.Empty<string>()
+                            }
+                        }
+                    };
+
+                    return Task.CompletedTask;
+                });
+            });
 
 
             string mySqlConnection = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -28,8 +57,7 @@ namespace VolkminianosAPI {
             // JWT
             var jwtChave = builder.Configuration["Jwt:Chave"]!;
 
-            builder.Services.AddAuthentication(options =>
-            {
+            builder.Services.AddAuthentication(options => {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
             })
