@@ -34,7 +34,8 @@ public class UsuarioService : IUsuarioService {
 
         var usuario = new Usuario {
             Nome = dto.Nome,
-            Email = dto.Email
+            Email = dto.Email,
+            Senha = BCrypt.Net.BCrypt.HashPassword(dto.Senha)
         };
 
         await _repository.AdicionarAsync(usuario);
