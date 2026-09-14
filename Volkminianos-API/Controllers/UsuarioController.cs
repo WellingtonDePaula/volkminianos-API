@@ -5,8 +5,8 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using VolkminianosAPI.Domain.Services;
 using VolkminianosAPI.DTOs.Usuario;
-using VolkminianosAPI.Services;
 
 namespace VolkminianosAPI.Controllers {
     [ApiController]

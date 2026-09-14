@@ -3,10 +3,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using VolkminianosAPI.Domain.Interfaces;
+using VolkminianosAPI.Domain.Services;
 using VolkminianosAPI.DTOs.Usuario;
 using Usuario = VolkminianosAPI.Models.Usuario;
 
-namespace VolkminianosAPI.Services;
+namespace VolkminianosAPI.Infrastructure.Services;
 
 public class UsuarioService : IUsuarioService {
     private readonly IUsuarioRepository _repository;

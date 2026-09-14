@@ -1,7 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using VolkminianosAPI.DTOs.Usuario;
 
-namespace VolkminianosAPI.Services;
+namespace VolkminianosAPI.Domain.Services;
 
 public interface IUsuarioService {
     Task<IEnumerable<UsuarioDto>> ObterTodosAsync();
