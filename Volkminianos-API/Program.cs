@@ -5,8 +5,9 @@ using Scalar.AspNetCore;
 using System.Text;
 using VolkminianosAPI.Context;
 using VolkminianosAPI.Domain.Interfaces;
-using VolkminianosAPI.Repositories;
-using VolkminianosAPI.Services;
+using VolkminianosAPI.Domain.Services;
+using VolkminianosAPI.Infrastructure.Repositories;
+using VolkminianosAPI.Infrastructure.Services;
 
 namespace VolkminianosAPI {
     public class Program {

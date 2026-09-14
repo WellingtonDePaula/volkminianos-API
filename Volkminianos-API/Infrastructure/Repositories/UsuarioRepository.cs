@@ -3,7 +3,7 @@ using VolkminianosAPI.Context;
 using VolkminianosAPI.Domain.Interfaces;
 using VolkminianosAPI.Models;
 
-namespace VolkminianosAPI.Repositories;
+namespace VolkminianosAPI.Infrastructure.Repositories;
 
 public class UsuarioRepository : IUsuarioRepository {
     private readonly AppDbContext _context;
