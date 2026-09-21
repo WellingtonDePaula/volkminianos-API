@@ -25,19 +25,54 @@ public class BairroService : IBairroService {
         return await _repository.SalvarMudancasAsync();
     }
 
-    public Task<BairroDto> CriarAsync(CriarBairroDto dto) {
-        throw new NotImplementedException();
+    public async Task<BairroDto> CriarAsync(CriarBairroDto dto) {
+        Bairro? bairroExistente = await _repository.ObterPorNomeAsync(dto.Nome);
+        if (bairroExistente is not null) {
+            throw new InvalidOperationException("Já existe um bairro cadastrado com este nome.");
+        }
+
+        Bairro novoBairro = new Bairro {
+            Nome = dto.Nome,
+            Ativo = true
+        };
+        await _repository.AdicionarAsync(novoBairro);
+        await _repository.SalvarMudancasAsync();
+
+        return new BairroDto {
+            Id = novoBairro.Id,
+            Nome = novoBairro.Nome,
+            Ativo = novoBairro.Ativo
+        };
     }
 
-    public Task<bool> DeletarAsync(int id) {
-        throw new NotImplementedException();
+    public async Task<bool> DeletarAsync(int id) {
+        Bairro? bairro = await _repository.ObterPorIdAsync(id);
+        if(bairro is null) {
+            return false;
+        }
+        _repository.Deletar(bairro);
+        return await _repository.SalvarMudancasAsync();
     }
 
-    public Task<BairroDto?> ObterPorIdAsync(int id) {
-        throw new NotImplementedException();
+    public async Task<BairroDto?> ObterPorIdAsync(int id) {
+        Bairro? bairro = await _repository.ObterPorIdAsync(id);
+        if(bairro is null) {
+            return null;
+        }
+
+        return new BairroDto {
+            Id = bairro.Id,
+            Nome = bairro.Nome,
+            Ativo = bairro.Ativo
+        };
     }
 
-    public Task<IEnumerable<BairroDto>> ObterTodosAsync() {
-        throw new NotImplementedException();
+    public async Task<IEnumerable<BairroDto>> ObterTodosAsync() {
+        IEnumerable<Bairro> bairros = await _repository.ObterTodosAsync();
+        return bairros.Select(b => new BairroDto {
+            Id = b.Id,
+            Nome = b.Nome,
+            Ativo = b.Ativo
+        });
     }
 }

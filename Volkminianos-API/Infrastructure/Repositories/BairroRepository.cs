@@ -26,6 +26,10 @@ namespace VolkminianosAPI.Infrastructure.Repositories {
             return await _context.Bairros!.FindAsync(id);
         }
 
+        public async Task<Bairro?> ObterPorNomeAsync(string nome) {
+            return await _context.Bairros!.AsNoTracking().FirstOrDefaultAsync(u => u.Nome == nome);
+        }
+
         public async Task<IEnumerable<Bairro>> ObterTodosAsync() {
             return await _context.Bairros!.AsNoTracking().ToListAsync();
         }
