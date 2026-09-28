@@ -6,9 +6,9 @@ using VolkminianosAPI.Models;
 namespace VolkminianosAPI.Infrastructure.Services;
 
 public class BairroService : IBairroService {
-    private readonly IBairroRepository _repository;
+    private readonly IPontoRepository _repository;
 
-    public BairroService(IBairroRepository repository) {
+    public BairroService(IPontoRepository repository) {
         _repository = repository;
     }
 
