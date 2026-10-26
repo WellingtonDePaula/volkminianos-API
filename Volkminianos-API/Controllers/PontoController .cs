@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
 using VolkminianosAPI.Domain.Services;
 using VolkminianosAPI.DTOs.Ponto;
 
