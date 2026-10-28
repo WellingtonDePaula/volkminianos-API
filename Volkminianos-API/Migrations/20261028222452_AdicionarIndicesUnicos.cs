@@ -10,15 +10,15 @@ namespace VolkminianosAPI.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateIndex(
+                name: "IX_Tarifas_BairroAId_BairroBId",
+                table: "Tarifas",
+                columns: new[] { "BairroAId", "BairroBId" },
+                unique: true);
+
             migrationBuilder.DropIndex(
                 name: "IX_Tarifas_BairroAId",
                 table: "Tarifas");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Usuarios_Email",
-                table: "Usuarios",
-                column: "Email",
-                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Tarifas_BairroAId_BairroBId",
@@ -54,14 +54,14 @@ namespace VolkminianosAPI.Migrations
                 name: "IX_Pontos_Nome",
                 table: "Pontos");
 
-            migrationBuilder.DropIndex(
-                name: "IX_Bairros_Nome",
-                table: "Bairros");
-
             migrationBuilder.CreateIndex(
                 name: "IX_Tarifas_BairroAId",
                 table: "Tarifas",
                 column: "BairroAId");
+
+            migrationBuilder.DropIndex(
+                name: "IX_Tarifas_BairroAId_BairroBId",
+                table: "Tarifas");
         }
     }
 }
