@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using VolkminianosAPI.Context;
 using VolkminianosAPI.Domain.Interfaces;
 using VolkminianosAPI.Models;
@@ -23,7 +23,7 @@ namespace VolkminianosAPI.Infrastructure.Repositories {
             _context.Pontos!.Remove(ponto);
         }
 
-        public async Task<IEnumerable<Ponto?>> ObterPorBairroIdAsync(int bairroId) {
+        public async Task<IEnumerable<Ponto>> ObterPorBairroIdAsync(int bairroId) {
             return await _context.Pontos!.AsNoTracking().Where(p => p.BairroId == bairroId).ToListAsync();
         }
 
