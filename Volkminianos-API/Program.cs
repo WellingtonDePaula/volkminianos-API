@@ -7,16 +7,19 @@ using VolkminianosAPI.Context;
 using VolkminianosAPI.Domain.Interfaces;
 using VolkminianosAPI.Domain.Services;
 using VolkminianosAPI.Infrastructure.Repositories;
+using VolkminianosAPI.Infrastructure.Seed;
 using VolkminianosAPI.Infrastructure.Services;
 
 namespace VolkminianosAPI {
     public class Program {
-        public static void Main(string[] args) {
+        public static async Task Main(string[] args) {
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers(options => {
+                options.SuppressAsyncSuffixInActionNames = false;
+            });
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi(options => {
                 options.AddDocumentTransformer((document, context, cancellationToken) => {
@@ -73,15 +76,30 @@ namespace VolkminianosAPI {
                 };
             });
 
+            // CORS: o front (outro endereço/porta) precisa de permissão para chamar a API.
+            // Em produção, liste os endereços em "Cors:Origens" no appsettings.
+            string[] origensPermitidas = builder.Configuration.GetSection("Cors:Origens").Get<string[]>() ?? [];
+            builder.Services.AddCors(options => {
+                options.AddPolicy("Front", policy => {
+                    if (origensPermitidas.Length > 0) {
+                        policy.WithOrigins(origensPermitidas).AllowAnyHeader().AllowAnyMethod();
+                    } else {
+                        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod();
+                    }
+                });
+            });
+
             // Repositories
             builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+            builder.Services.AddScoped<IBairroRepository, BairroRepository>();
+            builder.Services.AddScoped<IPontoRepository, PontoRepository>();
+            builder.Services.AddScoped<ITarifaRepository, TarifaRepository>();
 
             // Services
             builder.Services.AddScoped<IUsuarioService, UsuarioService>();
-
-            builder.Services.AddControllers(options => {
-                options.SuppressAsyncSuffixInActionNames = false;
-            });
+            builder.Services.AddScoped<IBairroService, BairroService>();
+            builder.Services.AddScoped<IPontoService, PontoService>();
+            builder.Services.AddScoped<ITarifaService, TarifaService>();
 
             var app = builder.Build();
 
@@ -94,10 +112,14 @@ namespace VolkminianosAPI {
 
             app.UseHttpsRedirection();
 
+            app.UseCors("Front");
+
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.MapControllers();
+
+            await AdminSeeder.SeedAsync(app.Services);
 
             app.Run();
         }
