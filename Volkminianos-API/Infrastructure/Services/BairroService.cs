@@ -1,4 +1,5 @@
-﻿using VolkminianosAPI.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
+using VolkminianosAPI.Domain.Interfaces;
 using VolkminianosAPI.Domain.Services;
 using VolkminianosAPI.DTOs.Bairro;
 using VolkminianosAPI.Models;
@@ -12,17 +13,14 @@ public class BairroService : IBairroService {
         _repository = repository;
     }
 
-    public async Task<bool> AtualizarAsync(int id, AtualizarBairroDto dto) {
+    public async Task<IEnumerable<BairroDto>> ObterTodosAsync() {
+        IEnumerable<Bairro> bairros = await _repository.ObterTodosAsync();
+        return bairros.Select(MapearParaDto);
+    }
+
+    public async Task<BairroDto?> ObterPorIdAsync(int id) {
         Bairro? bairro = await _repository.ObterPorIdAsync(id);
-        if(bairro is null) {
-            return false;
-        }
-
-        bairro.Nome = dto.Nome;
-        bairro.Ativo = dto.Ativo;
-
-        _repository.Atualizar(bairro);
-        return await _repository.SalvarMudancasAsync();
+        return bairro is null ? null : MapearParaDto(bairro);
     }
 
     public async Task<BairroDto> CriarAsync(CriarBairroDto dto) {
@@ -38,41 +36,49 @@ public class BairroService : IBairroService {
         await _repository.AdicionarAsync(novoBairro);
         await _repository.SalvarMudancasAsync();
 
-        return new BairroDto {
-            Id = novoBairro.Id,
-            Nome = novoBairro.Nome,
-            Ativo = novoBairro.Ativo
-        };
+        return MapearParaDto(novoBairro);
+    }
+
+    public async Task<bool> AtualizarAsync(int id, AtualizarBairroDto dto) {
+        Bairro? bairro = await _repository.ObterPorIdAsync(id);
+        if (bairro is null) {
+            return false;
+        }
+
+        // Outro bairro (id diferente) já usa esse nome?
+        Bairro? bairroComMesmoNome = await _repository.ObterPorNomeAsync(dto.Nome);
+        if (bairroComMesmoNome is not null && bairroComMesmoNome.Id != id) {
+            throw new InvalidOperationException("Já existe um bairro cadastrado com este nome.");
+        }
+
+        bairro.Nome = dto.Nome;
+        bairro.Ativo = dto.Ativo;
+
+        _repository.Atualizar(bairro);
+        return await _repository.SalvarMudancasAsync();
     }
 
     public async Task<bool> DeletarAsync(int id) {
         Bairro? bairro = await _repository.ObterPorIdAsync(id);
-        if(bairro is null) {
+        if (bairro is null) {
             return false;
         }
+
         _repository.Deletar(bairro);
-        return await _repository.SalvarMudancasAsync();
+        try {
+            return await _repository.SalvarMudancasAsync();
+        } catch (DbUpdateException) {
+            // Pontos e Tarifas usam DeleteBehavior.Restrict: o banco recusa apagar bairro em uso.
+            throw new InvalidOperationException(
+                "Não é possível excluir o bairro: existem pontos ou tarifas vinculados a ele.");
+        }
     }
 
-    public async Task<BairroDto?> ObterPorIdAsync(int id) {
-        Bairro? bairro = await _repository.ObterPorIdAsync(id);
-        if(bairro is null) {
-            return null;
-        }
-
+    private static BairroDto MapearParaDto(Bairro bairro) {
         return new BairroDto {
             Id = bairro.Id,
             Nome = bairro.Nome,
             Ativo = bairro.Ativo
         };
-    }
-
-    public async Task<IEnumerable<BairroDto>> ObterTodosAsync() {
-        IEnumerable<Bairro> bairros = await _repository.ObterTodosAsync();
-        return bairros.Select(b => new BairroDto {
-            Id = b.Id,
-            Nome = b.Nome,
-            Ativo = b.Ativo
-        });
     }
 }
