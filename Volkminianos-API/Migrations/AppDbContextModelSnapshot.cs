@@ -40,6 +40,9 @@ namespace VolkminianosAPI.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("Nome")
+                        .IsUnique();
+
                     b.ToTable("Bairros");
                 });
 
@@ -89,6 +92,9 @@ namespace VolkminianosAPI.Migrations
 
                     b.HasIndex("BairroId");
 
+                    b.HasIndex("Nome")
+                        .IsUnique();
+
                     b.ToTable("Pontos");
                 });
 
@@ -117,9 +123,10 @@ namespace VolkminianosAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BairroAId");
-
                     b.HasIndex("BairroBId");
+
+                    b.HasIndex("BairroAId", "BairroBId")
+                        .IsUnique();
 
                     b.ToTable("Tarifas");
                 });
@@ -159,6 +166,9 @@ namespace VolkminianosAPI.Migrations
                         .HasColumnType("longtext");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
 
                     b.ToTable("Usuarios");
                 });

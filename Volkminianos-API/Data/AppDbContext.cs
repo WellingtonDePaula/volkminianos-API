@@ -1,4 +1,4 @@
-﻿using VolkminianosAPI.Models;
+using VolkminianosAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace VolkminianosAPI.Context;
@@ -32,5 +32,24 @@ public class AppDbContext : DbContext {
             .WithMany()
             .HasForeignKey(t => t.BairroBId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Índices únicos: o banco passa a garantir o que os services já checam,
+        // evitando duplicados mesmo com duas requisições simultâneas.
+        modelBuilder.Entity<Bairro>()
+            .HasIndex(b => b.Nome)
+            .IsUnique();
+
+        modelBuilder.Entity<Ponto>()
+            .HasIndex(p => p.Nome)
+            .IsUnique();
+
+        modelBuilder.Entity<Usuario>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
+
+        // Uma única tarifa por par de bairros (o par é guardado sempre ordenado: A <= B).
+        modelBuilder.Entity<Tarifa>()
+            .HasIndex(t => new { t.BairroAId, t.BairroBId })
+            .IsUnique();
     }
 }
