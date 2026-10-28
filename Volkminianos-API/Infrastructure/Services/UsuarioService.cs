@@ -1,4 +1,4 @@
-﻿using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -42,7 +42,8 @@ public class UsuarioService : IUsuarioService {
         var usuario = new Usuario {
             Nome = dto.Nome,
             Email = dto.Email,
-            Senha = BCrypt.Net.BCrypt.HashPassword(dto.Senha)
+            Senha = BCrypt.Net.BCrypt.HashPassword(dto.Senha),
+            IsAdmin = dto.IsAdmin
         };
 
         await _repository.AdicionarAsync(usuario);
@@ -55,6 +56,11 @@ public class UsuarioService : IUsuarioService {
         var usuario = await _repository.ObterPorIdAsync(id);
         if (usuario is null) {
             return false;
+        }
+
+        var usuarioComMesmoEmail = await _repository.ObterPorEmailAsync(dto.Email);
+        if (usuarioComMesmoEmail is not null && usuarioComMesmoEmail.Id != id) {
+            throw new InvalidOperationException("Já existe um usuário cadastrado com este e-mail.");
         }
 
         usuario.Nome = dto.Nome;
@@ -91,7 +97,7 @@ public class UsuarioService : IUsuarioService {
     public async Task<string> LoginAsync(LoginUsuarioDto dto) {
         var usuario = await _repository.ObterPorEmailAsync(dto.Email);
 
-        if (usuario is null || !BCrypt.Net.BCrypt.Verify(dto.Senha, usuario.Senha))
+        if (usuario is null || !usuario.Ativo || !BCrypt.Net.BCrypt.Verify(dto.Senha, usuario.Senha))
             throw new UnauthorizedAccessException("Email ou senha inválidos.");
 
         var claims = new List<Claim>
@@ -121,4 +127,4 @@ public class UsuarioService : IUsuarioService {
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
-}
+}

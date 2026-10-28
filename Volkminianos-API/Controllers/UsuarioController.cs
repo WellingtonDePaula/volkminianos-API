@@ -1,10 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using VolkminianosAPI.Domain.Services;
 using VolkminianosAPI.DTOs.Usuario;
 
@@ -87,11 +82,15 @@ namespace VolkminianosAPI.Controllers {
                 return BadRequest(ModelState);
             }
 
-            var atualizado = await _service.AtualizarAsync(id, dto);
-            if (!atualizado) {
-                return NotFound("Usuário não encontrado.");
+            try {
+                var atualizado = await _service.AtualizarAsync(id, dto);
+                if (!atualizado) {
+                    return NotFound("Usuário não encontrado.");
+                }
+                return NoContent();
+            } catch (InvalidOperationException ex) {
+                return Conflict(new { mensagem = ex.Message });
             }
-            return NoContent();
         }
 
         [Authorize(Roles = "Admin")]

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace VolkminianosAPI.DTOs.Usuario;
 
@@ -15,4 +15,7 @@ public class CriarUsuarioDto {
     [Required(ErrorMessage = "A senha é obrigatória.")]
     [MinLength(8, ErrorMessage = "A senha deve ter no mínimo 8 caracteres.")]
     public string Senha { get; set; } = string.Empty;
-}
+
+    // Só um Admin chega neste endpoint, então ele pode criar outros admins.
+    public bool IsAdmin { get; set; } = false;
+}
