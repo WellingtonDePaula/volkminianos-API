@@ -25,7 +25,7 @@ Instale antes de começar:
 
 | Ferramenta | Para quê | Como verificar |
 |---|---|---|
-| [.NET SDK 9](https://dotnet.microsoft.com/download/dotnet/9.0) | compilar e rodar a API | `dotnet --version` (deve começar com `9.`) |
+| [.NET SDK 9](https://dotnet.microsoft.com/download/dotnet/9.0) (ou mais novo) | compilar e rodar a API | `dotnet --list-runtimes` deve listar `Microsoft.AspNetCore.App 9.x` |
 | [Docker Desktop](https://www.docker.com/products/docker-desktop/) | subir o MySQL | `docker --version` |
 | [Git](https://git-scm.com/) | baixar o repositório | `git --version` |
 
@@ -62,13 +62,21 @@ docker compose logs -f db
 
 Quando aparecer `ready for connections`, aperte `Ctrl + C` para sair dos logs. O contêiner continua rodando.
 
-### 3. Criar as tabelas (migrations)
+### 3. Restaurar os pacotes
+
+Baixa as dependências do projeto (NuGet). É obrigatório em um clone novo, antes de qualquer outro comando do `dotnet`:
+
+```bash
+dotnet restore
+```
+
+### 4. Criar as tabelas (migrations)
 
 ```bash
 dotnet ef database update
 ```
 
-### 4. Configurar o administrador inicial
+### 5. Configurar o administrador inicial
 
 A API só tem rotas protegidas para cadastro, então é preciso existir um primeiro administrador. Ele é criado automaticamente na inicialização, a partir das configurações abaixo. Guarde os valores nos *user-secrets* (ficam na sua máquina e **não** vão para o Git):
 
@@ -83,7 +91,7 @@ Atenção:
 - A senha precisa ter **no mínimo 8 caracteres**, senão o login será recusado.
 - O administrador só é criado se **ainda não existir nenhum** no banco. Para trocar a senha depois, use a API.
 
-### 5. Rodar a API
+### 6. Rodar a API
 
 ```bash
 dotnet run --launch-profile http
@@ -93,11 +101,11 @@ Quando aparecer `Now listening on: http://localhost:5212`, a API está no ar.
 
 Para usar HTTPS (`https://localhost:7041`), rode uma vez `dotnet dev-certs https --trust` e use `dotnet run --launch-profile https`.
 
-### 6. Conferir que funcionou
+### 7. Conferir que funcionou
 
 - Abra a documentação interativa: <http://localhost:5212/scalar/v1> (disponível só em ambiente de desenvolvimento).
 - Ou teste uma rota pública no navegador: <http://localhost:5212/api/bairro> (deve responder `[]` na primeira vez).
-- Faça o login com o administrador do passo 4:
+- Faça o login com o administrador do passo 5:
 
 ```bash
 curl -X POST http://localhost:5212/api/usuario/login \
@@ -147,12 +155,13 @@ Detalhes de cada corpo de requisição estão na documentação do Scalar.
 
 ## Testando
 
-O arquivo `Volkminianos-API.http` contém um roteiro com dezenas de requisições em ordem, cada uma com o resultado esperado. Abra-o no Visual Studio 2022 ou no VS Code (extensão *REST Client*), ajuste as variáveis do topo (`@adminEmail` e `@adminSenha` devem ser os do passo 4) e execute de cima para baixo.
+O arquivo `Volkminianos-API.http` contém um roteiro com dezenas de requisições em ordem, cada uma com o resultado esperado. Abra-o no Visual Studio 2022 ou no VS Code (extensão *REST Client*), ajuste as variáveis do topo (`@adminEmail` e `@adminSenha` devem ser os do passo 5) e execute de cima para baixo.
 
 ## Problemas comuns
 
 | Sintoma | O que fazer |
 |---|---|
+| `NETSDK1004: Arquivo de ativos 'project.assets.json' não encontrado` | Faltou restaurar os pacotes. Rode `dotnet restore` na pasta do projeto e repita o comando. |
 | `dotnet ef` não é reconhecido | Rode `dotnet tool install --global dotnet-ef` e abra um terminal novo. |
 | `Unable to connect to any of the specified MySQL hosts` | O Docker Desktop precisa estar aberto e o contêiner rodando (`docker compose ps`). Após subir, aguarde o `ready for connections`. |
 | Porta 3306 já em uso | Há outro MySQL na máquina. Pare-o ou mude a porta em `docker-compose.yml` (ex.: `"3307:3306"`) e ajuste `Port=` na connection string. |
