@@ -1,6 +1,570 @@
-@Volkminianos_API_HostAddress = http://localhost:5082
+# =====================================================================
+# ROTEIRO DE TESTES - Volkminianos API
+# =====================================================================
+# COMO USAR
+#  1. Suba a API (dotnet run --launch-profile http) com o banco migrado e o
+#     admin criado pelo seeder (Admin:Email / Admin:Senha no user-secrets).
+#  2. Ajuste as 4 variáveis logo abaixo (host, e-mail e senha do admin).
+#  3. Execute as requisições NA ORDEM, de cima para baixo. Várias usam o
+#     resultado das anteriores (token, ids), via "# @name" + {{nome.response...}}.
+#  4. Compare o status recebido com a linha "ESPERADO" de cada teste.
+#
+# Funciona na extensão REST Client (VS Code) e no Visual Studio 2022 (.http).
+# Se algum teste falhar, anote o número do teste e a resposta recebida.
+#
+# O roteiro apaga tudo o que cria. Se parar no meio e quiser recomeçar
+# sem limpar o banco, troque @run (ex.: 1 -> 2) para gerar nomes novos.
+# =====================================================================
 
-GET {{Volkminianos_API_HostAddress}}/weatherforecast/
-Accept: application/json
+@host = http://localhost:5212
+@run = 1
+@adminEmail = admin@example.com
+@adminSenha = admin123
 
-###
+
+# =====================================================================
+# 1. AUTENTICAÇÃO E PERMISSÕES
+# =====================================================================
+
+### T01 - Login do admin
+# ESPERADO: 200 e um JSON com "token"
+# @name login
+POST {{host}}/api/usuario/login
+Content-Type: application/json
+
+{ "email": "{{adminEmail}}", "senha": "{{adminSenha}}" }
+
+### T02 - Login com senha errada
+# ESPERADO: 401 "Email ou senha inválidos."
+POST {{host}}/api/usuario/login
+Content-Type: application/json
+
+{ "email": "{{adminEmail}}", "senha": "senha-errada-123" }
+
+### T03 - Criar bairro SEM token
+# ESPERADO: 401
+POST {{host}}/api/bairro
+Content-Type: application/json
+
+{ "nome": "Sem Token {{run}}" }
+
+### T04 - Admin cria um usuário comum
+# ESPERADO: 201, "isAdmin": false
+# @name usuarioComum
+POST {{host}}/api/usuario
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Usuario Comum", "email": "comum{{run}}@teste.com", "senha": "senha-comum-123" }
+
+### T05 - Criar usuário com o mesmo e-mail
+# ESPERADO: 409 "Já existe um usuário cadastrado com este e-mail."
+POST {{host}}/api/usuario
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Repetido", "email": "comum{{run}}@teste.com", "senha": "senha-comum-123" }
+
+### T06 - Criar usuário com senha curta
+# ESPERADO: 400 (mensagem: mínimo 8 caracteres)
+POST {{host}}/api/usuario
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Senha Curta", "email": "curta{{run}}@teste.com", "senha": "123" }
+
+### T07 - Login do usuário comum
+# ESPERADO: 200 e token
+# @name loginComum
+POST {{host}}/api/usuario/login
+Content-Type: application/json
+
+{ "email": "comum{{run}}@teste.com", "senha": "senha-comum-123" }
+
+### T08 - Usuário comum tenta criar bairro (precisa ser Admin)
+# ESPERADO: 403
+POST {{host}}/api/bairro
+Authorization: Bearer {{loginComum.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Proibido {{run}}" }
+
+
+# =====================================================================
+# 2. BAIRROS
+# =====================================================================
+
+### T09 - Criar bairro A
+# ESPERADO: 201 com "id"
+# @name bairroA
+POST {{host}}/api/bairro
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Bairro A {{run}}" }
+
+### T10 - Criar bairro B
+# ESPERADO: 201
+# @name bairroB
+POST {{host}}/api/bairro
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Bairro B {{run}}" }
+
+### T11 - Criar bairro C
+# ESPERADO: 201
+# @name bairroC
+POST {{host}}/api/bairro
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Bairro C {{run}}" }
+
+### T12 - Criar bairro com nome repetido
+# ESPERADO: 409 {"mensagem": "Já existe um bairro..."}
+POST {{host}}/api/bairro
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Bairro A {{run}}" }
+
+### T13 - Criar bairro sem nome
+# ESPERADO: 400
+POST {{host}}/api/bairro
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "" }
+
+### T14 - Listar bairros (público, sem token)
+# ESPERADO: 200 com A, B e C na lista
+GET {{host}}/api/bairro
+
+### T15 - Buscar bairro A por id
+# ESPERADO: 200 com o nome "Bairro A ..."
+GET {{host}}/api/bairro/{{bairroA.response.body.$.id}}
+
+### T16 - Buscar bairro inexistente
+# ESPERADO: 404
+GET {{host}}/api/bairro/999999
+
+### T17 - Renomear o bairro C
+# ESPERADO: 204
+PUT {{host}}/api/bairro/{{bairroC.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Bairro C Renomeado {{run}}", "ativo": true }
+
+### T18 - Renomear o bairro C para o nome do bairro A
+# ESPERADO: 409
+PUT {{host}}/api/bairro/{{bairroC.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Bairro A {{run}}", "ativo": true }
+
+### T19 - Atualizar bairro inexistente
+# ESPERADO: 404
+PUT {{host}}/api/bairro/999999
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Fantasma {{run}}", "ativo": true }
+
+
+# =====================================================================
+# 3. PONTOS
+# =====================================================================
+
+### T20 - Criar ponto A1 (bairro A)
+# ESPERADO: 201 com "id" e "bairroId" igual ao id do bairro A
+# @name pontoA1
+POST {{host}}/api/ponto
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "nome": "Ponto A1 {{run}}",
+  "endereco": "Rua Teste, 100",
+  "bairroId": {{bairroA.response.body.$.id}},
+  "latitude": -26.7407,
+  "longitude": -49.1779,
+  "pontoTuristico": true,
+  "descricao": "Primeiro ponto do bairro A"
+}
+
+### T21 - Criar ponto A2 (também no bairro A, sem endereço nem descrição)
+# ESPERADO: 201 ("endereco" e "descricao" nulos, sem erro)
+# @name pontoA2
+POST {{host}}/api/ponto
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "nome": "Ponto A2 {{run}}",
+  "bairroId": {{bairroA.response.body.$.id}},
+  "latitude": -26.7410,
+  "longitude": -49.1785
+}
+
+### T22 - Criar ponto B1 (bairro B)
+# ESPERADO: 201
+# @name pontoB1
+POST {{host}}/api/ponto
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "nome": "Ponto B1 {{run}}",
+  "bairroId": {{bairroB.response.body.$.id}},
+  "latitude": -26.7500,
+  "longitude": -49.1900
+}
+
+### T23 - Criar ponto C1 (bairro C)
+# ESPERADO: 201
+# @name pontoC1
+POST {{host}}/api/ponto
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "nome": "Ponto C1 {{run}}",
+  "bairroId": {{bairroC.response.body.$.id}},
+  "latitude": -26.7600,
+  "longitude": -49.2000
+}
+
+### T24 - Criar ponto com bairro inexistente
+# ESPERADO: 400 {"mensagem": "O bairro informado não existe."}  (antes dava 500)
+POST {{host}}/api/ponto
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Ponto Sem Bairro {{run}}", "bairroId": 999999, "latitude": -26.7, "longitude": -49.1 }
+
+### T25 - Criar ponto com latitude fora do intervalo
+# ESPERADO: 400 (latitude entre -90 e 90)
+POST {{host}}/api/ponto
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Ponto Latitude {{run}}", "bairroId": {{bairroA.response.body.$.id}}, "latitude": 200, "longitude": -49.1 }
+
+### T26 - Criar ponto com nome repetido
+# ESPERADO: 409
+POST {{host}}/api/ponto
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Ponto A1 {{run}}", "bairroId": {{bairroA.response.body.$.id}}, "latitude": -26.7, "longitude": -49.1 }
+
+### T27 - Listar pontos (público)
+# ESPERADO: 200 com A1, A2, B1 e C1
+GET {{host}}/api/ponto
+
+### T28 - Buscar ponto A1 por id
+# ESPERADO: 200
+GET {{host}}/api/ponto/{{pontoA1.response.body.$.id}}
+
+### T29 - Listar pontos do bairro A
+# ESPERADO: 200 com exatamente A1 e A2
+GET {{host}}/api/ponto/bairro/{{bairroA.response.body.$.id}}
+
+### T30 - Buscar ponto por nome
+# ESPERADO: 200 (Ponto B1)
+GET {{host}}/api/ponto/nome/Ponto%20B1%20{{run}}
+
+### T31 - Buscar ponto por nome inexistente
+# ESPERADO: 404
+GET {{host}}/api/ponto/nome/Nao%20Existe
+
+### T32 - Atualizar ponto A2 (muda descrição)
+# ESPERADO: 204
+PUT {{host}}/api/ponto/{{pontoA2.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{
+  "nome": "Ponto A2 {{run}}",
+  "endereco": "Rua Nova, 200",
+  "bairroId": {{bairroA.response.body.$.id}},
+  "latitude": -26.7410,
+  "longitude": -49.1785,
+  "pontoTuristico": false,
+  "descricao": "Descrição atualizada",
+  "ativo": true
+}
+
+### T33 - Conferir a atualização do ponto A2
+# ESPERADO: 200, descricao "Descrição atualizada" e "atualizadoEm" preenchido
+GET {{host}}/api/ponto/{{pontoA2.response.body.$.id}}
+
+### T34 - Atualizar ponto A2 usando o nome do ponto A1
+# ESPERADO: 409
+PUT {{host}}/api/ponto/{{pontoA2.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Ponto A1 {{run}}", "bairroId": {{bairroA.response.body.$.id}}, "latitude": -26.7, "longitude": -49.1, "ativo": true }
+
+### T35 - Atualizar ponto A2 para um bairro inexistente
+# ESPERADO: 400
+PUT {{host}}/api/ponto/{{pontoA2.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Ponto A2 {{run}}", "bairroId": 999999, "latitude": -26.7, "longitude": -49.1, "ativo": true }
+
+### T36 - Atualizar ponto inexistente
+# ESPERADO: 404
+PUT {{host}}/api/ponto/999999
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Fantasma {{run}}", "bairroId": {{bairroA.response.body.$.id}}, "latitude": -26.7, "longitude": -49.1, "ativo": true }
+
+
+# =====================================================================
+# 4. TARIFAS
+# =====================================================================
+
+### T37 - Consulta ANTES de existir tarifa (A1 -> B1)
+# ESPERADO: 404 {"mensagem": "Não há tarifa cadastrada entre os bairros desses pontos."}
+GET {{host}}/api/tarifa/consulta?origemPontoId={{pontoA1.response.body.$.id}}&destinoPontoId={{pontoB1.response.body.$.id}}
+
+### T38 - Criar tarifa entre bairro A e bairro B (5,50)
+# ESPERADO: 201; "bairroAId" <= "bairroBId" (o par é guardado ordenado)
+# @name tarifaAB
+POST {{host}}/api/tarifa
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "bairroAId": {{bairroA.response.body.$.id}}, "bairroBId": {{bairroB.response.body.$.id}}, "valor": 5.50 }
+
+### T39 - Criar a tarifa de novo, com os bairros INVERTIDOS (B, A)
+# ESPERADO: 409 "Já existe uma tarifa cadastrada entre esses bairros."
+# (prova que A->B e B->A são a mesma tarifa)
+POST {{host}}/api/tarifa
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "bairroAId": {{bairroB.response.body.$.id}}, "bairroBId": {{bairroA.response.body.$.id}}, "valor": 9.99 }
+
+### T40 - Criar tarifa dentro do mesmo bairro A (3,00)
+# ESPERADO: 201
+# @name tarifaAA
+POST {{host}}/api/tarifa
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "bairroAId": {{bairroA.response.body.$.id}}, "bairroBId": {{bairroA.response.body.$.id}}, "valor": 3.00 }
+
+### T41 - Criar tarifa com valor 0
+# ESPERADO: 400
+POST {{host}}/api/tarifa
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "bairroAId": {{bairroB.response.body.$.id}}, "bairroBId": {{bairroC.response.body.$.id}}, "valor": 0 }
+
+### T42 - Criar tarifa com valor acima do limite
+# ESPERADO: 400
+POST {{host}}/api/tarifa
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "bairroAId": {{bairroB.response.body.$.id}}, "bairroBId": {{bairroC.response.body.$.id}}, "valor": 10000 }
+
+### T43 - Criar tarifa com bairro inexistente
+# ESPERADO: 400 {"mensagem": "O bairro 999999 não existe."}
+POST {{host}}/api/tarifa
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "bairroAId": {{bairroA.response.body.$.id}}, "bairroBId": 999999, "valor": 4.00 }
+
+### T44 - Usuário comum tenta criar tarifa
+# ESPERADO: 403
+POST {{host}}/api/tarifa
+Authorization: Bearer {{loginComum.response.body.$.token}}
+Content-Type: application/json
+
+{ "bairroAId": {{bairroB.response.body.$.id}}, "bairroBId": {{bairroC.response.body.$.id}}, "valor": 4.00 }
+
+### T45 - Listar tarifas (público)
+# ESPERADO: 200 com as tarifas A-B (5.50) e A-A (3.00), com os nomes dos bairros
+GET {{host}}/api/tarifa
+
+### T46 - Buscar tarifa A-B por id
+# ESPERADO: 200 com valor 5.50
+GET {{host}}/api/tarifa/{{tarifaAB.response.body.$.id}}
+
+### T47 - Buscar tarifa inexistente
+# ESPERADO: 404
+GET {{host}}/api/tarifa/999999
+
+### T48 - CONSULTA: A1 -> B1 (o caso principal do passageiro)
+# ESPERADO: 200, valor 5.50, com nomes dos pontos e dos bairros de origem e destino
+GET {{host}}/api/tarifa/consulta?origemPontoId={{pontoA1.response.body.$.id}}&destinoPontoId={{pontoB1.response.body.$.id}}
+
+### T49 - CONSULTA no sentido inverso: B1 -> A1
+# ESPERADO: 200, MESMO valor 5.50; origem e destino trocados na resposta
+GET {{host}}/api/tarifa/consulta?origemPontoId={{pontoB1.response.body.$.id}}&destinoPontoId={{pontoA1.response.body.$.id}}
+
+### T50 - CONSULTA entre dois pontos do mesmo bairro: A1 -> A2
+# ESPERADO: 200, valor 3.00
+GET {{host}}/api/tarifa/consulta?origemPontoId={{pontoA1.response.body.$.id}}&destinoPontoId={{pontoA2.response.body.$.id}}
+
+### T51 - CONSULTA sem tarifa cadastrada: A1 -> C1
+# ESPERADO: 404 "Não há tarifa cadastrada..."
+GET {{host}}/api/tarifa/consulta?origemPontoId={{pontoA1.response.body.$.id}}&destinoPontoId={{pontoC1.response.body.$.id}}
+
+### T52 - CONSULTA com ponto de origem inexistente
+# ESPERADO: 404 "Ponto de origem não encontrado."
+GET {{host}}/api/tarifa/consulta?origemPontoId=999999&destinoPontoId={{pontoB1.response.body.$.id}}
+
+### T53 - CONSULTA com ponto de destino inexistente
+# ESPERADO: 404 "Ponto de destino não encontrado."
+GET {{host}}/api/tarifa/consulta?origemPontoId={{pontoA1.response.body.$.id}}&destinoPontoId=999999
+
+### T54 - CONSULTA sem parâmetros
+# ESPERADO: 400
+GET {{host}}/api/tarifa/consulta
+
+### T55 - Atualizar o valor da tarifa A-B para 6,00
+# ESPERADO: 204
+PUT {{host}}/api/tarifa/{{tarifaAB.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "valor": 6.00 }
+
+### T56 - Conferir o novo valor pela consulta
+# ESPERADO: 200, valor 6.00
+GET {{host}}/api/tarifa/consulta?origemPontoId={{pontoA1.response.body.$.id}}&destinoPontoId={{pontoB1.response.body.$.id}}
+
+### T57 - Atualizar tarifa inexistente
+# ESPERADO: 404
+PUT {{host}}/api/tarifa/999999
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "valor": 6.00 }
+
+
+# =====================================================================
+# 5. INTEGRIDADE E EXCLUSÕES  (a ordem importa)
+# =====================================================================
+
+### T58 - Apagar o bairro A, que ainda tem pontos e tarifas
+# ESPERADO: 409 "Não é possível excluir o bairro..."  (antes dava 500)
+DELETE {{host}}/api/bairro/{{bairroA.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+
+### T59 - Usuário comum tenta apagar ponto
+# ESPERADO: 403
+DELETE {{host}}/api/ponto/{{pontoA1.response.body.$.id}}
+Authorization: Bearer {{loginComum.response.body.$.token}}
+
+### T60 - Apagar tarifa A-B
+# ESPERADO: 204
+DELETE {{host}}/api/tarifa/{{tarifaAB.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+
+### T61 - Apagar a mesma tarifa de novo
+# ESPERADO: 404
+DELETE {{host}}/api/tarifa/{{tarifaAB.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+
+### T62 - Consulta A1 -> B1 depois de apagar a tarifa
+# ESPERADO: 404 "Não há tarifa cadastrada..."
+GET {{host}}/api/tarifa/consulta?origemPontoId={{pontoA1.response.body.$.id}}&destinoPontoId={{pontoB1.response.body.$.id}}
+
+### T63 - Apagar tarifa A-A
+# ESPERADO: 204
+DELETE {{host}}/api/tarifa/{{tarifaAA.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+
+### T64 - Apagar ponto A1
+# ESPERADO: 204
+DELETE {{host}}/api/ponto/{{pontoA1.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+
+### T65 - Conferir que o ponto A1 sumiu de verdade
+# ESPERADO: 404  (antes o DELETE respondia sucesso mas não apagava)
+GET {{host}}/api/ponto/{{pontoA1.response.body.$.id}}
+
+### T66 - Apagar ponto A2
+# ESPERADO: 204
+DELETE {{host}}/api/ponto/{{pontoA2.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+
+### T67 - Apagar ponto B1
+# ESPERADO: 204
+DELETE {{host}}/api/ponto/{{pontoB1.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+
+### T68 - Apagar ponto C1
+# ESPERADO: 204
+DELETE {{host}}/api/ponto/{{pontoC1.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+
+### T69 - Apagar ponto inexistente
+# ESPERADO: 404
+DELETE {{host}}/api/ponto/999999
+Authorization: Bearer {{login.response.body.$.token}}
+
+### T70 - Apagar bairro A (agora sem vínculos)
+# ESPERADO: 204
+DELETE {{host}}/api/bairro/{{bairroA.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+
+### T71 - Apagar bairro B
+# ESPERADO: 204
+DELETE {{host}}/api/bairro/{{bairroB.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+
+### T72 - Apagar bairro C
+# ESPERADO: 204
+DELETE {{host}}/api/bairro/{{bairroC.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+
+
+# =====================================================================
+# 6. USUÁRIOS (regras novas) e limpeza final
+# =====================================================================
+
+### T73 - Mudar o e-mail do usuário comum para o e-mail do admin
+# ESPERADO: 409 {"mensagem": "Já existe um usuário cadastrado com este e-mail."}
+PUT {{host}}/api/usuario/{{usuarioComum.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Usuario Comum", "email": "{{adminEmail}}", "ativo": true }
+
+### T74 - Inativar o usuário comum
+# ESPERADO: 204
+PUT {{host}}/api/usuario/{{usuarioComum.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+Content-Type: application/json
+
+{ "nome": "Usuario Comum", "email": "comum{{run}}@teste.com", "ativo": false }
+
+### T75 - Login do usuário inativo
+# ESPERADO: 401  (agora o login recusa usuários inativos)
+POST {{host}}/api/usuario/login
+Content-Type: application/json
+
+{ "email": "comum{{run}}@teste.com", "senha": "senha-comum-123" }
+
+### T76 - Apagar o usuário comum (limpeza)
+# ESPERADO: 204
+DELETE {{host}}/api/usuario/{{usuarioComum.response.body.$.id}}
+Authorization: Bearer {{login.response.body.$.token}}
+
+### T77 - Conferir que os dados de teste sumiram
+# ESPERADO: 200; nenhum "... {{run}}" restante na lista
+GET {{host}}/api/bairro
